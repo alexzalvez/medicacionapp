@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Control de Medicación</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --background: #ffffff;
+            --text: #333333;
+            --card-bg: #f5f5f5;
+            --button-hover: #45a049;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #2E7D32;
+            --background: #121212;
+            --text: #ffffff;
+            --card-bg: #1E1E1E;
+            --button-hover: #1B5E20;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 2rem;
+        }
+
+        .last-dose-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .last-dose-time {
+            font-size: 2.5rem;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .record-button {
+            width: 100%;
+            padding: 25px;
+            font-size: 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .record-button:active {
+            transform: scale(0.98);
+            background: var(--button-hover);
+        }
+
+        .history-section {
+            margin-top: 30px;
+        }
+
+        .history-list {
+            list-style: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: var(--card-bg);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .clear-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary-color: #2E7D32;
+                --background: #121212;
+                --text: #ffffff;
+                --card-bg: #1E1E1E;
+                --button-hover: #1B5E20;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Control de Medicación 💊</h1>
+        
+        <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+        
+        <div class="last-dose-card">
+            <h2>Última toma registrada:</h2>
+            <div class="last-dose-time" id="lastDoseTime">--:--</div>
+        </div>
+
+        <button class="record-button" onclick="recordDose()">
+            Registrar Nueva Toma ⏱️
+        </button>
+
+        <div class="history-section">
+            <h2>Historial (Últimas 10 tomas)</h2>
+            <ul class="history-list" id="historyList"></ul>
+            <button class="clear-button" onclick="clearHistory()">Borrar Historial</button>
+        </div>
+    </div>
+
+    <script>
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();
+            updateDisplay();
+        });
+
+        // Funcionalidad principal
+        function recordDose() {
+            const now = new Date();
+            const doseTime = now.toLocaleString('es-ES');
+            
+            // Guardar última toma
+            localStorage.setItem('lastDose', doseTime);
+            
+            // Actualizar historial
+            const history = JSON.parse(localStorage.getItem('doseHistory') || '[]');
+            history.unshift(doseTime);
+            localStorage.setItem('doseHistory', JSON.stringify(history.slice(0, 10)));
+            
+            updateDisplay();
+            animateButton();
+        }
+
+        function updateDisplay() {
+            // Actualizar última toma
+            const lastDose = localStorage.getItem('lastDose');
+            document.getElementById('lastDoseTime').textContent = lastDose || 'Nunca';
+            
+            // Actualizar historial
+            const history = JSON.parse(localStorage.getItem('doseHistory') || '[]');
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = history.map(time => `
+                <li class="history-item">
+                    <span>${time}</span>
+                </li>
+            `).join('');
+        }
+
+        function clearHistory() {
+            if(confirm('¿Borrar todo el historial?')) {
+                localStorage.removeItem('lastDose');
+                localStorage.removeItem('doseHistory');
+                updateDisplay();
+            }
+        }
+
+        // Temas
+        function toggleTheme() {
+            document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('theme', document.body.dataset.theme);
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.body.dataset.theme = savedTheme;
+        }
+
+        // Animaciones
+        function animateButton() {
+            const button = document.querySelector('.record-button');
+            button.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 100);
+        }
+    </script>
+</body>
+</html>
